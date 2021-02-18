@@ -32,6 +32,7 @@ class AxiCacheTagArrayLookupResIntf(HandshakeSync):
 
     def _config(self):
         self.ID_WIDTH = Param(4)
+        self.LEN_WIDTH = Param(4)
         AxiCacheTagArrayUpdateIntf._config(self)
         self.TAG_T = Param(None)
 
@@ -39,6 +40,7 @@ class AxiCacheTagArrayLookupResIntf(HandshakeSync):
         Axi_id._declr(self)
         self.found = Signal()
         self.addr = VectSignal(self.ADDR_WIDTH)
+        self.len = VectSignal(self.LEN_WIDTH)
         if self.WAY_CNT > 1:
             self.way = VectSignal(log2ceil(self.WAY_CNT - 1))
         if self.TAG_T is not None:
@@ -90,8 +92,7 @@ class AxiCacheTagArray(CacheAddrTypeConfig):
     def _config(self):
         self.PORT_CNT = Param(2)
         self.UPDATE_PORT_CNT = Param(1)
-        self.ID_WIDTH = Param(4)
-        AxiCacheTagArrayUpdateIntf._config(self)
+        AxiCacheTagArrayLookupResIntf._config(self)
         CacheAddrTypeConfig._config(self)
         self.LOOKUP_LATENCY = 1
         self.MAX_BLOCK_DATA_WIDTH = Param(None)
@@ -184,6 +185,7 @@ class AxiCacheTagArray(CacheAddrTypeConfig):
             "lookup_tmp",
             HStruct(
                 *([(lookup.id._dtype, "id")] if lookup.ID_WIDTH else ()),
+                *([(lookup.len._dtype, "len")] if lookup.LEN_WIDTH else ()),
                 (lookup.addr._dtype, "addr"),
                 (BIT, "vld")
             ),
@@ -226,6 +228,7 @@ class AxiCacheTagArray(CacheAddrTypeConfig):
         lookup.rd(~lookup_tmp.vld | lookupRes.rd)
         If(lookup.rd,
             lookup_tmp.id(lookup.id) if lookup.ID_WIDTH else [],
+            lookup_tmp.len(lookup.len) if lookup.LEN_WIDTH else [],
             lookup_tmp.addr(lookup.addr),
         )
         lookup_tmp.vld(lookup.vld | (lookup_tmp.vld & ~lookupRes.rd))
@@ -238,6 +241,8 @@ class AxiCacheTagArray(CacheAddrTypeConfig):
 
         if lookupRes.ID_WIDTH:
             lookupRes.id(lookup_tmp.id)
+        if lookupRes.LEN_WIDTH:
+            lookupRes.len(lookup_tmp.len)
         lookupRes.addr(lookup_tmp.addr)
         lookupRes.way(oneHotToBin(self, found))
         lookupRes.found(Or(*found))

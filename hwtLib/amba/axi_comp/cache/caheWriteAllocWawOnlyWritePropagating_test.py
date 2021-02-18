@@ -109,7 +109,7 @@ class AxiCaheWriteAllocWawOnlyWritePropagatingTC(SingleUnitSimTestCase):
         res = {}
         tags_t = u.tag_array.tag_record_t[u.WAY_CNT]
         tags_raw_t = Bits(tags_t.bit_length())
-        for index in range(2 ** u.INDEX_W):
+        for index in range(2 ** u.INDEX_WIDTH):
             tags = self._get_from_mems(self.TAGS, index)
             tags = tags_raw_t.from_py(tags.val, tags.vld_mask)._reinterpret_cast(tags_t)
             for way, t in enumerate(tags):

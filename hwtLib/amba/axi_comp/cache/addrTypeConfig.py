@@ -39,18 +39,18 @@ class CacheAddrTypeConfig(Unit):
 
     def _compupte_tag_index_offset_widths(self):
         self.OFFSET_W = log2ceil(self.CACHE_LINE_SIZE - 1)
-        self.INDEX_W = log2ceil(self.CACHE_LINE_CNT // self.WAY_CNT - 1)
-        self.TAG_W = self.ADDR_WIDTH - self.INDEX_W - self.OFFSET_W
+        self.INDEX_WIDTH = log2ceil(self.CACHE_LINE_CNT // self.WAY_CNT - 1)
+        self.TAG_W = self.ADDR_WIDTH - self.INDEX_WIDTH - self.OFFSET_W
 
     def parse_addr_int(self, addr: int) -> Tuple[int, int, int]:
-        tag = addr >> (self.INDEX_W + self.OFFSET_W)
-        index = (addr >> self.OFFSET_W) & mask(self.INDEX_W)
+        tag = addr >> (self.INDEX_WIDTH + self.OFFSET_W)
+        index = (addr >> self.OFFSET_W) & mask(self.INDEX_WIDTH)
         offset = addr & mask(self.OFFSET_W)
         return tag, index, offset
 
     def parse_addr(self, addr) -> Tuple[RtlSignal, RtlSignal, RtlSignal]:
-        tag = addr[:(self.INDEX_W + self.OFFSET_W)]
-        index = addr[(self.INDEX_W + self.OFFSET_W):self.OFFSET_W]
+        tag = addr[:(self.INDEX_WIDTH + self.OFFSET_W)]
+        index = addr[(self.INDEX_WIDTH + self.OFFSET_W):self.OFFSET_W]
         offset = addr[self.OFFSET_W:]
         return tag, index, offset
 
@@ -62,6 +62,6 @@ class CacheAddrTypeConfig(Unit):
             offset = Bits(self.OFFSET_W).from_py(offset)
 
         if isinstance(index, int):
-            index = Bits(self.INDEX_W).from_py(index)
+            index = Bits(self.INDEX_WIDTH).from_py(index)
 
         return Concat(tag, index, offset)

@@ -8,11 +8,14 @@ class AddrHs(HandshakeSync):
 
     def _config(self):
         self.ID_WIDTH = Param(4)
+        self.LEN_WIDTH = Param(4)
         self.ADDR_WIDTH = Param(32)
 
     def _declr(self):
         if self.ID_WIDTH:
             self.id = VectSignal(self.ID_WIDTH)
+        if self.LEN_WIDTH:
+            self.len = VectSignal(self.LEN_WIDTH)
         self.addr = VectSignal(self.ADDR_WIDTH)
         HandshakeSync._declr(self)
 

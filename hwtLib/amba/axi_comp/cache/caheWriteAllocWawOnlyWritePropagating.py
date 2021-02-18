@@ -123,11 +123,18 @@ class AxiCaheWriteAllocWawOnlyWritePropagating(CacheAddrTypeConfig):
             self.lru_array = AxiCacheLruArray()
             for a in [self.tag_array, self.lru_array]:
                 a.PORT_CNT = 2  # r+w
+            
+            self.tag_array.ID_WIDTH  = self.s.ID_WIDTH
+            self.tag_array.LEN_WIDTH = self.s.LEN_WIDTH
+            self.lru_array.ID_WIDTH  = 0            
+            self.lru_array.LEN_WIDTH = 0
 
         # self.flush = HandshakeSync()
         # self.init = HandshakeSync()
 
         data_array = self.data_array = RamSingleClock()
+        data_array.ID_WIDTH = self.s.ID_WIDTH
+        data_array.LEN_WIDTH = self.s.LEN_WIDTH
         data_array.MAX_BLOCK_DATA_WIDTH = self.MAX_BLOCK_DATA_WIDTH
         data_array.DATA_WIDTH = self.DATA_WIDTH
         data_array.ADDR_WIDTH = log2ceil(
@@ -152,6 +159,7 @@ class AxiCaheWriteAllocWawOnlyWritePropagating(CacheAddrTypeConfig):
         for a, tag_lookup in zip((in_ar, in_aw), tags.lookup):
             tag_lookup.addr(a.addr)
             tag_lookup.id(a.id)
+            tag_lookup.len(a.len)
             if a is in_aw:
                 rc = self.read_cancel
                 rc.addr(a.addr)
@@ -180,6 +188,7 @@ class AxiCaheWriteAllocWawOnlyWritePropagating(CacheAddrTypeConfig):
         # send read request to data_array
         ar_index = self.parse_addr(ar_tagRes.addr)[1]
         data_arr_read_req.id(ar_tagRes.id)
+        data_arr_read_req.len(ar_tagRes.len)
         data_arr_read_req.index(ar_index),
         data_arr_read_req.way(ar_tagRes.way)
 
@@ -201,7 +210,7 @@ class AxiCaheWriteAllocWawOnlyWritePropagating(CacheAddrTypeConfig):
 
         out_ar.addr(ar_tagRes.addr)
         out_ar.id(ar_tagRes.id)
-        out_ar.len(0)
+        out_ar.len(ar_tagRes.len)
         self.axiAddrDefaults(out_ar)
 
         s_r = AxiSBuilder.join_prioritized(self, [
@@ -531,7 +540,9 @@ class AxiCaheWriteAllocWawOnlyWritePropagating(CacheAddrTypeConfig):
         with self._paramsShared():
             data_arr_read = self.data_arr_read = Axi4_r()
             data_arr_read_req = IndexWayHs()
-            data_arr_read_req.INDEX_WIDTH = self.INDEX_W
+            data_arr_read_req.ID_WIDTH = self.ID_WIDTH
+            data_arr_read_req.LEN_WIDTH = self.s.LEN_WIDTH
+            data_arr_read_req.INDEX_WIDTH = self.INDEX_WIDTH
             self.data_arr_read_req = data_arr_read_req
 
         self.connect_tag_lookup()

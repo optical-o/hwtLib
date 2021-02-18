@@ -24,12 +24,15 @@ class IndexWayHs(HandshakeSync):
 
     def _config(self):
         self.ID_WIDTH = Param(0)
+        self.LEN_WIDTH = Param(4)
         self.INDEX_WIDTH = Param(10)
         self.WAY_CNT = Param(4)
 
     def _declr(self):
         if self.ID_WIDTH:
             self.id = VectSignal(self.ID_WIDTH)
+        if self.LEN_WIDTH:
+            self.len = VectSignal(self.LEN_WIDTH)
         self.index = VectSignal(self.INDEX_WIDTH)
         if self.WAY_CNT > 1:
             self.way = VectSignal(log2ceil(self.WAY_CNT - 1))
@@ -51,8 +54,8 @@ class AxiCacheLruArray(CacheAddrTypeConfig):
 
     def _config(self):
         CacheAddrTypeConfig._config(self)
+        IndexWayHs._config(self)
         self.INCR_PORT_CNT = Param(2)
-        self.WAY_CNT = Param(4)
 
     def _compute_constants(self):
         assert self.WAY_CNT >= 1, self.WAY_CNT
@@ -65,25 +68,28 @@ class AxiCacheLruArray(CacheAddrTypeConfig):
         # used to initialize the LRU data (in the case of cache reset)
         # while set port is active all other ports are blocked
         s = self.set = AddrDataHs()
-        s.ADDR_WIDTH = self.INDEX_W
+        s.ADDR_WIDTH = self.INDEX_WIDTH
         s.DATA_WIDTH = self.LRU_WIDTH
 
         # used to increment the LRU data in the case of hit
         self.incr = HObjList(IndexWayHs() for _ in range(self.INCR_PORT_CNT))
         for i in self.incr:
-            i.INDEX_WIDTH = self.INDEX_W
+            i.ID_WIDTH = self.ID_WIDTH
+            i.LEN_WIDTH = self.LEN_WIDTH
+            i.INDEX_WIDTH = self.INDEX_WIDTH
             i.WAY_CNT = self.WAY_CNT
 
         # get a victim for a selected cacheline index
         # The cacheline returned as a victim is also marked as used just now
         vr = self.victim_req = AddrHs()
-        vr.ADDR_WIDTH = self.INDEX_W
+        vr.ADDR_WIDTH = self.INDEX_WIDTH
         vr.ID_WIDTH = 0
+        vr.LEN_WIDTH = 0
         vd = self.victim_data = Handshaked()._m()
         vd.DATA_WIDTH = log2ceil(self.WAY_CNT - 1)
 
         m = self.lru_mem = RamXorSingleClock()
-        m.ADDR_WIDTH = self.INDEX_W
+        m.ADDR_WIDTH = self.INDEX_WIDTH
         m.DATA_WIDTH = self.LRU_WIDTH
         m.PORT_CNT = (
             # victim_req preload, victim_req write back or set,
