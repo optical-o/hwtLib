@@ -118,6 +118,7 @@ class AxiCaheWriteAllocWawOnlyWritePropagating(CacheAddrTypeConfig):
 
             rc = self.read_cancel = AddrHs()._m()
             rc.ID_WIDTH = 0
+            rc.LEN_WIDTH = 0
 
             self.tag_array = AxiCacheTagArray()
             self.lru_array = AxiCacheLruArray()
